@@ -15,13 +15,15 @@ pub struct Update<'info> {
 }
 
 impl<'info> Update<'info> {
-    pub fn update(&mut self, receive: u64, expiration: i64) -> Result<()> {
+    pub fn update(&mut self, receive: u64, unlock_at: i64, expiration: i64) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
-        require!(now < self.escrow.expiration, ErrorCode::EscrowExpired);
+        require!(now < self.escrow.unlock_at, ErrorCode::UpdateWindowClosed);
         require!(receive > 0, ErrorCode::InvalidAmount);
-        require!(expiration > now, ErrorCode::InvalidExpiration);
+        require!(unlock_at > now, ErrorCode::InvalidTimeWindow);
+        require!(expiration > unlock_at, ErrorCode::InvalidTimeWindow);
 
         self.escrow.receive = receive;
+        self.escrow.unlock_at = unlock_at;
         self.escrow.expiration = expiration;
         Ok(())
     }

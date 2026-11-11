@@ -12,8 +12,9 @@ pub use state::*;
 declare_id!("5bewKCQhwLDMb9SGAW2KTCkqvNMNZziuMTno2tkrcz2G");
 
 // Two parties — a maker and a taker — can swap tokens without trusting each other or a third party.
-// The maker deposits token A into a program-controlled vault and specifies how much of token B they want in return.
-// Any taker who holds token B can complete the swap atomically. If no taker appears, the maker can reclaim their tokens at any time.
+// The maker deposits token A into a program-controlled vault, specifies how much of token B they want,
+// and sets a timed claim window. A taker can complete the swap during that window; after it closes,
+// the maker can reclaim their tokens.
 
 // Maker deposits token A  →  vault (PDA-owned)
 //                                       ↓  taker sends token B to maker
@@ -30,10 +31,11 @@ pub mod escrowq32026 {
         seed: u64,
         deposit: u64,
         receive: u64,
+        unlock_at: i64,
         expiration: i64,
     ) -> Result<()> {
         ctx.accounts
-            .init_escrow(seed, receive, &ctx.bumps, expiration)?;
+            .init_escrow(seed, receive, &ctx.bumps, unlock_at, expiration)?;
         ctx.accounts.deposit(deposit)
     }
 
@@ -48,7 +50,12 @@ pub mod escrowq32026 {
     }
 
     #[instruction(discriminator = 3)]
-    pub fn update(ctx: Context<Update>, receive: u64, expiration: i64) -> Result<()> {
-        ctx.accounts.update(receive, expiration)
+    pub fn update(
+        ctx: Context<Update>,
+        receive: u64,
+        unlock_at: i64,
+        expiration: i64,
+    ) -> Result<()> {
+        ctx.accounts.update(receive, unlock_at, expiration)
     }
 }

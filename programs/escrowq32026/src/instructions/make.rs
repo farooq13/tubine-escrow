@@ -53,13 +53,13 @@ impl<'info> Make<'info> {
         seed: u64,
         receive: u64,
         bumps: &MakeBumps,
+        unlock_at: i64,
         expiration: i64,
     ) -> Result<()> {
         require!(receive > 0, ErrorCode::InvalidAmount);
-        require!(
-            expiration > Clock::get()?.unix_timestamp,
-            ErrorCode::InvalidExpiration
-        );
+        let now = Clock::get()?.unix_timestamp;
+        require!(unlock_at > now, ErrorCode::InvalidTimeWindow);
+        require!(expiration > unlock_at, ErrorCode::InvalidTimeWindow);
 
         self.escrow.set_inner(Escrow {
             seed,
@@ -67,6 +67,7 @@ impl<'info> Make<'info> {
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
             receive,
+            unlock_at,
             bump: bumps.escrow,
             expiration,
         });

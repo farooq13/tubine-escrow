@@ -65,10 +65,9 @@ pub struct Take<'info> {
 
 impl<'info> Take<'info> {
     pub fn take(&mut self) -> Result<()> {
-        require!(
-            Clock::get()?.unix_timestamp < self.escrow.expiration,
-            ErrorCode::EscrowExpired
-        );
+        let now = Clock::get()?.unix_timestamp;
+        require!(now >= self.escrow.unlock_at, ErrorCode::EscrowNotUnlocked);
+        require!(now < self.escrow.expiration, ErrorCode::EscrowExpired);
         require!(
             self.vault.amount > 0 && self.escrow.receive > 0,
             ErrorCode::InvalidAmount
